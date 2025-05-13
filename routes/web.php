@@ -122,6 +122,7 @@ Route::middleware(['auth'])->group(function () {
     Route::group(['middleware' => ['role_or_permission:admin|stockout']], function () {
         Route::resource('stockout', StockoutController::class)->names('stockout');
 
+        Route::get('stockout/{stockout}/print', [StockoutController::class, 'print'])->name('stockout.print');
         Route::get('stockout-get-item', [StockoutController::class, 'get_item'])->name('stockout.get_item');
         Route::get('stockout-get-item-by-id', [StockoutController::class, 'get_item_by_id'])->name('stockout.get_item_by_id');
     });

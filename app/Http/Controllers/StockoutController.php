@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\Itemprice;
 use App\Models\Stockout;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use PDF;
 
 class StockoutController extends Controller
 {
@@ -14,7 +17,16 @@ class StockoutController extends Controller
      */
     public function index(Request $request)
     {
-        $stockout = Stockout::where('number', 'like', '%' . $request->search . '%')
+        $start_date = $request->start_date ?? Carbon::now()->startOfMonth();
+        $end_date = $request->end_date ?? Carbon::now()->endOfMonth();
+        $stockout = Stockout::query();
+        if ($request->start_date && ($request->start_date != 'null' || $request->start_date != 'All')) {
+            $stockout = $stockout->where('date', '>=', $start_date);
+        }
+        if ($request->end_date && ($request->end_date != 'null' || $request->end_date != 'All')) {
+            $stockout = $stockout->where('date', '<=', $end_date);
+        }
+        $stockout = $stockout->where('number', 'like', '%' . $request->search . '%')
             ->paginate(10, ['*'], 'page', $request->page ?? 1)
             ->onEachSide(0)
             ->appends(request()->except('page'));
@@ -40,11 +52,31 @@ class StockoutController extends Controller
         DB::beginTransaction();
         $stockout = new Stockout();
         $stockout->number = Controller::generateCode(6);
+        $stockout->date = $request->date;
         $stockout->status = $request->status;
         $stockout->save();
-
-        if ($stockout->status == 'Submit') {
+        if ($request->item_id) {
+            foreach ($request->item_id as $key => $item_id) {
+                $detail[] = [
+                    'stockout_id' => $stockout->id,
+                    'item_id' => $item_id,
+                    'unit' => $request->unit[$key],
+                    'qty' => $request->qty ? Controller::number_unformat($request->qty[$key]) : null,
+                ];
+            }
+            $stockout->stockoutdetail()->createMany($detail);
         }
+        /**
+         * Update stock
+         */
+        if ($stockout->status == 'Submit') {
+            foreach ($stockout->stockoutdetail as $d) {
+                $item = Item::find($d->item_id);
+                $item->stock = $item->stock - $d->qty;
+                $item->save();
+            }
+        }
+        /** End */
         DB::commit();
         return redirect()->route('stockout.index')->with([
             'message' => 'Data saved!'
@@ -56,7 +88,7 @@ class StockoutController extends Controller
      */
     public function show(Stockout $stockout)
     {
-        //
+        return view('stockout.show', compact('stockout'));
     }
 
     /**
@@ -64,7 +96,7 @@ class StockoutController extends Controller
      */
     public function edit(Stockout $stockout)
     {
-        //
+        return view('stockout.edit', compact('stockout'));
     }
 
     /**
@@ -72,7 +104,40 @@ class StockoutController extends Controller
      */
     public function update(Request $request, Stockout $stockout)
     {
-        //
+        $request->validate([
+            'date' => 'required',
+        ]);
+        DB::beginTransaction();
+        $stockout->date = $request->date;
+        $stockout->status = $request->status;
+        $stockout->save();
+        if ($request->item_id) {
+            foreach ($request->item_id as $key => $item_id) {
+                $detail[] = [
+                    'stockout_id' => $stockout->id,
+                    'item_id' => $item_id,
+                    'unit' => $request->unit[$key],
+                    'qty' => $request->qty ? Controller::number_unformat($request->qty[$key]) : null,
+                ];
+            }
+            $stockout->stockoutdetail()->delete();
+            $stockout->stockoutdetail()->createMany($detail);
+        }
+        /**
+         * Update stock
+         */
+        if ($stockout->status == 'Submit') {
+            foreach ($stockout->stockoutdetail as $d) {
+                $item = Item::find($d->item_id);
+                $item->stock = $item->stock - $d->qty;
+                $item->save();
+            }
+        }
+        /** End */
+        DB::commit();
+        return redirect()->route('stockout.index')->with([
+            'message' => 'Data saved!'
+        ]);
     }
 
     /**
@@ -80,7 +145,13 @@ class StockoutController extends Controller
      */
     public function destroy(Stockout $stockout)
     {
-        //
+        DB::beginTransaction();
+        $stockout->stockoutdetail()->delete();
+        $stockout->delete();
+        DB::commit();
+        return redirect()->route('stockout.index')->with([
+            'message' => 'Data deleted!'
+        ]);
     }
 
     public function get_item(Request $request)
@@ -111,11 +182,17 @@ class StockoutController extends Controller
     {
         if ($request->ajax()) {
             $item = Item::find($request->item_id);
-            $itemprice = Itemprice::where('item_id', $request->item_id)->where('supplier_id', $request->supplier_id)->first();
             return response()->json([
-                'item' => $item,
-                'itemprice' => $itemprice
+                'item' => $item
             ]);
         }
+    }
+
+    public function print(Request $request, Stockout $stockout)
+    {
+        $pdf = PDF::loadview('stockout.print', compact(
+            'stockout'
+        ));
+        return $pdf->download('stockout-' . $stockout->number  . '.pdf');
     }
 }

@@ -41,7 +41,7 @@
                     <div class="mb-3">
                         <label for="stock" class="form-label">Stock</label>
                         <input type="text" class="form-control" id="stock" name="stock"
-                            value="{{ Illuminate\Support\Number::format($item->stock) }}">
+                            value="{{ Illuminate\Support\Number::format($item->stock) }}" readonly>
                     </div>
                     <div class="row">
                         <div class="col">

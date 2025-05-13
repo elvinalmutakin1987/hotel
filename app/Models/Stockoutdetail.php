@@ -16,6 +16,14 @@ class Stockoutdetail extends Model implements Auditable
     protected $auditInclude = [
         'stockout_id',
         'item_id',
+        'unit',
+        'qty'
+    ];
+
+    protected $fillable = [
+        'stockout_id',
+        'item_id',
+        'unit',
         'qty'
     ];
 
