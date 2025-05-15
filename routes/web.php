@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoodreceiptController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\HousekeepingController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoleController;
@@ -125,5 +126,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('stockout/{stockout}/print', [StockoutController::class, 'print'])->name('stockout.print');
         Route::get('stockout-get-item', [StockoutController::class, 'get_item'])->name('stockout.get_item');
         Route::get('stockout-get-item-by-id', [StockoutController::class, 'get_item_by_id'])->name('stockout.get_item_by_id');
+    });
+
+    Route::group(['middleware' => ['role_or_permission:admin|invoice']], function () {
+        Route::resource('invoice', InvoiceController::class)->names('invoice');
+
+        Route::get('invoice/{invoice}/print', [InvoiceController::class, 'print'])->name('invoice.print');
+        Route::get('invoice-get-item', [InvoiceController::class, 'get_item'])->name('invoice.get_item');
+        Route::get('invoice-get-item-by-id', [InvoiceController::class, 'get_item_by_id'])->name('invoice.get_item_by_id');
+        Route::get('invoice-get-goodreceipt', [InvoiceController::class, 'get_goodreceipt'])->name('invoice.get_goodreceipt');
     });
 });

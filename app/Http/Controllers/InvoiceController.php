@@ -7,12 +7,13 @@ use App\Models\Itemprice;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Models\Goodreceipt;
+use App\Models\Invoice;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PDF;
 
-class GoodreceiptController extends Controller
+class InvoiceController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -21,21 +22,21 @@ class GoodreceiptController extends Controller
     {
         $start_date = $request->start_date ?? Carbon::now()->startOfMonth();
         $end_date = $request->end_date ?? Carbon::now()->endOfMonth();
-        $goodreceipt = Goodreceipt::where('number', 'like', '%' . $request->search . '%');
+        $invoice = Invoice::where('number', 'like', '%' . $request->search . '%')->orWhere('supplier_bill', 'like', '%' . $request->search . '%');
         if ($request->start_date && ($request->start_date != 'null' || $request->start_date != 'All')) {
-            $goodreceipt = $goodreceipt->where('date', '>=', $start_date);
+            $invoice = $invoice->where('date', '>=', $start_date);
         }
         if ($request->end_date && ($request->end_date != 'null' || $request->end_date != 'All')) {
-            $goodreceipt = $goodreceipt->where('date', '<=', $end_date);
+            $invoice = $invoice->where('date', '<=', $end_date);
         }
         if ($request->supplier_id && ($request->supplier_id != 'null' || $request->supplier_id != 'All')) {
-            $goodreceipt = $goodreceipt->where('supplier_id', $request->supplier_id);
+            $invoice = $invoice->where('supplier_id', $request->supplier_id);
         }
-        $goodreceipt = $goodreceipt->paginate(10, ['*'], 'page', $request->page ?? 1)
+        $invoice = $invoice->paginate(10, ['*'], 'page', $request->page ?? 1)
             ->onEachSide(0)
             ->appends(request()->except('page'));
         $supplier = Supplier::all();
-        return view('goodreceipt.index', compact('goodreceipt', 'supplier'));
+        return view('invoice.index', compact('invoice', 'supplier'));
     }
 
     /**
@@ -45,8 +46,8 @@ class GoodreceiptController extends Controller
     {
         $systemsetting = collect(config('systemsetting'));
         $supplier = Supplier::all();
-        $purchase = Purchase::where('status', 'Submit')->get();
-        return view('goodreceipt.create', compact('supplier', 'purchase', 'systemsetting'));
+        $goodreceipt = Goodreceipt::where('status', 'Submit')->get();
+        return view('invoice.create', compact('supplier', 'goodreceipt', 'systemsetting'));
     }
 
     /**
@@ -60,22 +61,24 @@ class GoodreceiptController extends Controller
             'grand_total' => 'required'
         ]);
         DB::beginTransaction();
-        $goodreceipt = new Goodreceipt();
-        $goodreceipt->supplier_id = $request->supplier_id;
-        $goodreceipt->purchase_id = $request->purchase_id;
-        $goodreceipt->number = Controller::generateCode(6);
-        $goodreceipt->date = $request->date;
-        $goodreceipt->total = $request->total ? Controller::number_unformat($request->total) : null;
-        $goodreceipt->discount = $request->discount ? Controller::number_unformat($request->discount) : null;
-        $goodreceipt->after_discount = $request->after_discount ? Controller::number_unformat($request->after_discount) : null;
-        $goodreceipt->tax = $request->tax ? Controller::number_unformat($request->tax) : null;
-        $goodreceipt->grand_total = $request->grand_total ? Controller::number_unformat($request->grand_total) : null;
-        $goodreceipt->status  = $request->status;
-        $goodreceipt->save();
+        $invoice = new Invoice();
+        $invoice->supplier_id = $request->supplier_id;
+        $invoice->goodreceipt_id = $request->goodreceipt_id;
+        $invoice->number = Controller::generateCode(6);
+        $invoice->supplier_bill = $request->supplier_bill;
+        $invoice->date = $request->date;
+        $invoice->due_date = $request->due_date;
+        $invoice->total = $request->total ? Controller::number_unformat($request->total) : null;
+        $invoice->discount = $request->discount ? Controller::number_unformat($request->discount) : null;
+        $invoice->after_discount = $request->after_discount ? Controller::number_unformat($request->after_discount) : null;
+        $invoice->tax = $request->tax ? Controller::number_unformat($request->tax) : null;
+        $invoice->grand_total = $request->grand_total ? Controller::number_unformat($request->grand_total) : null;
+        $invoice->status  = $request->status;
+        $invoice->save();
         if ($request->item_id) {
             foreach ($request->item_id as $key => $item_id) {
                 $detail[] = [
-                    'goodreceipt_id' => $goodreceipt->id,
+                    'invoice_id' => $invoice->id,
                     'item_id' => $item_id,
                     'unit' => $request->unit[$key],
                     'price' => $request->price[$key] ? Controller::number_unformat($request->price[$key]) : null,
@@ -83,21 +86,10 @@ class GoodreceiptController extends Controller
                     'sub_total' => $request->sub_total ? Controller::number_unformat($request->sub_total[$key]) : null
                 ];
             }
-            $goodreceipt->goodreceiptdetail()->createMany($detail);
+            $invoice->invoicedetail()->createMany($detail);
         }
-        /**
-         * Update stock
-         */
-        if ($goodreceipt->status == 'Submit') {
-            foreach ($goodreceipt->goodreceiptdetail as $d) {
-                $item = Item::find($d->item_id);
-                $item->stock = $item->stock + $d->qty;
-                $item->save();
-            }
-        }
-        /** End */
         DB::commit();
-        return redirect()->route('goodreceipt.index')->with([
+        return redirect()->route('invoice.index')->with([
             'message' => 'Data saved!'
         ]);
     }
@@ -105,27 +97,27 @@ class GoodreceiptController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Goodreceipt $goodreceipt)
+    public function show(Invoice $invoice)
     {
         $systemsetting = collect(config('systemsetting'));
-        return view('goodreceipt.show', compact('goodreceipt', 'systemsetting'));
+        return view('invoice.show', compact('invoice', 'systemsetting'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Goodreceipt $goodreceipt)
+    public function edit(Invoice $invoice)
     {
         $systemsetting = collect(config('systemsetting'));
         $supplier = Supplier::all();
-        $purchase = Purchase::where('status', 'Submit')->get();
-        return view('goodreceipt.edit', compact('goodreceipt', 'purchase', 'supplier', 'systemsetting'));
+        $goodreceipt = Goodreceipt::where('status', 'Submit')->get();
+        return view('invoice.edit', compact('invoice', 'goodreceipt', 'supplier', 'systemsetting'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Goodreceipt $goodreceipt)
+    public function update(Request $request, Invoice $invoice)
     {
         $request->validate([
             'supplier_id' => 'required',
@@ -133,20 +125,23 @@ class GoodreceiptController extends Controller
             'grand_total' => 'required'
         ]);
         DB::beginTransaction();
-        $goodreceipt->supplier_id = $request->supplier_id;
-        $goodreceipt->purchase_id = $request->purchase_id;
-        $goodreceipt->date = $request->date;
-        $goodreceipt->total = $request->total ? Controller::number_unformat($request->total) : null;
-        $goodreceipt->discount = $request->discount ? Controller::number_unformat($request->discount) : null;
-        $goodreceipt->after_discount = $request->after_discount ? Controller::number_unformat($request->after_discount) : null;
-        $goodreceipt->tax = $request->tax ? Controller::number_unformat($request->tax) : null;
-        $goodreceipt->grand_total = $request->grand_total ? Controller::number_unformat($request->grand_total) : null;
-        $goodreceipt->status  = $request->status;
-        $goodreceipt->save();
+        $invoice->supplier_id = $request->supplier_id;
+        $invoice->goodreceipt_id = $request->goodreceipt_id;
+        $invoice->number = Controller::generateCode(6);
+        $invoice->supplier_bill = $request->supplier_bill;
+        $invoice->date = $request->date;
+        $invoice->due_date = $request->due_date;
+        $invoice->total = $request->total ? Controller::number_unformat($request->total) : null;
+        $invoice->discount = $request->discount ? Controller::number_unformat($request->discount) : null;
+        $invoice->after_discount = $request->after_discount ? Controller::number_unformat($request->after_discount) : null;
+        $invoice->tax = $request->tax ? Controller::number_unformat($request->tax) : null;
+        $invoice->grand_total = $request->grand_total ? Controller::number_unformat($request->grand_total) : null;
+        $invoice->status  = $request->status;
+        $invoice->save();
         if ($request->item_id) {
             foreach ($request->item_id as $key => $item_id) {
                 $detail[] = [
-                    'goodreceipt_id' => $goodreceipt->id,
+                    'invoice_id' => $invoice->id,
                     'item_id' => $item_id,
                     'unit' => $request->unit[$key],
                     'price' => $request->price[$key] ? Controller::number_unformat($request->price[$key]) : null,
@@ -154,22 +149,10 @@ class GoodreceiptController extends Controller
                     'sub_total' => $request->sub_total ? Controller::number_unformat($request->sub_total[$key]) : null
                 ];
             }
-            $goodreceipt->goodreceiptdetail()->delete();
-            $goodreceipt->goodreceiptdetail()->createMany($detail);
+            $invoice->invoicedetail()->createMany($detail);
         }
-        /**
-         * Update stock
-         */
-        if ($goodreceipt->status == 'Submit') {
-            foreach ($goodreceipt->goodreceiptdetail as $d) {
-                $item = Item::find($d->item_id);
-                $item->stock = $item->stock + $d->qty;
-                $item->save();
-            }
-        }
-        /** End */
         DB::commit();
-        return redirect()->route('goodreceipt.index')->with([
+        return redirect()->route('invoice.index')->with([
             'message' => 'Data saved!'
         ]);
     }
@@ -177,35 +160,35 @@ class GoodreceiptController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Goodreceipt $goodreceipt)
+    public function destroy(Invoice $invoice)
     {
         DB::beginTransaction();
-        $goodreceipt->goodreceiptdetail()->delete();
-        $goodreceipt->delete();
+        $invoice->invoicedetail()->delete();
+        $invoice->delete();
         DB::commit();
-        return redirect()->route('goodreceipt.index')->with([
+        return redirect()->route('invoice.index')->with([
             'message' => 'Data deleted!'
         ]);
     }
 
-    public function get_purchase(Request $request)
+    public function get_goodreceipt(Request $request)
     {
         if ($request->ajax()) {
             $term = trim($request->term);
-            $purchase = Purchase::selectRaw("id, number as text");
+            $goodreceipt = Goodreceipt::selectRaw("id, number as text");
             if ($request->supplier_id != null || $request->supplier_id != 'All' || $request->supplier_id != 'null') {
-                $purchase = $purchase->where('supplier_id', $request->supplier_id);
+                $goodreceipt = $goodreceipt->where('supplier_id', $request->supplier_id);
             }
-            $purchase = $purchase->where('number', 'like', '%' . $term . '%')
+            $goodreceipt = $goodreceipt->where('number', 'like', '%' . $term . '%')
                 ->orderBy('number')->simplePaginate(10);
-            $total_count = count($purchase);
+            $total_count = count($goodreceipt);
             $morePages = true;
-            $pagination_obj = json_encode($purchase);
-            if (empty($purchase->nextPageUrl())) {
+            $pagination_obj = json_encode($goodreceipt);
+            if (empty($goodreceipt->nextPageUrl())) {
                 $morePages = false;
             }
             $result = [
-                "results" => $purchase->items(),
+                "results" => $goodreceipt->items(),
                 "pagination" => [
                     "more" => $morePages
                 ],
@@ -254,10 +237,10 @@ class GoodreceiptController extends Controller
     public function print(Request $request, Goodreceipt $goodreceipt)
     {
         $systemsetting = collect(config('systemsetting'));
-        $pdf = PDF::loadview('goodreceipt.print', compact(
-            'goodreceipt',
+        $pdf = PDF::loadview('invoice.print', compact(
+            'invoice',
             'systemsetting'
         ));
-        return $pdf->download('goodreceipt-' . $goodreceipt->number  . '.pdf');
+        return $pdf->download('invoice-' . $invoice->number  . '.pdf');
     }
 }

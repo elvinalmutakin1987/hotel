@@ -104,6 +104,19 @@
                             </ul>
                         </li>
                     @endif
+                    @if (auth()->user()->hasAnyPermission(['purchase', 'goodreceipt', 'stock', 'stockopname', 'supplier']))
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="dropdown04" data-bs-toggle="dropdown"
+                                aria-expanded="false">Financial & Accounting</a>
+                            <ul class="dropdown-menu" aria-labelledby="dropdown04">
+                                @if (auth()->user()->hasPermissionTo('invoice'))
+                                    <li><a class="dropdown-item" href="{{ route('invoice.index') }}">Invoice</a>
+                                    </li>
+                                @endif
+
+                            </ul>
+                        </li>
+                    @endif
                 </ul>
                 <div class="d-flex">
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">

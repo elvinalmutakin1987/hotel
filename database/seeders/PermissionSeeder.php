@@ -36,7 +36,8 @@ class PermissionSeeder extends Seeder
             'stockopname',
             'stockout',
             'transactions',
-            'invoices',
+            'invoice',
+            'invoicepayment',
             'expenses',
             'chartofaccounts',
             'finansialreports',
@@ -46,7 +47,8 @@ class PermissionSeeder extends Seeder
             'profitlost',
             'staff',
             'user',
-            'role'
+            'role',
+            'settings'
         ];
 
         foreach ($permissions as $permission) {
@@ -88,7 +90,8 @@ class PermissionSeeder extends Seeder
 
         $accountingRole->syncPermissions([
             'transactions',
-            'invoices',
+            'invoice',
+            'invoicepayment',
             'expenses',
             'chartofaccounts',
             'finansialreports',
