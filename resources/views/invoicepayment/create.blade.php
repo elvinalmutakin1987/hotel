@@ -50,13 +50,19 @@
                         </div>
                         <div class="col">
                             <div class="mb-3">
+                                <label for="invoice_total" class="form-label">Invoice Total</label>
+                                <input type="text" class="form-control" id="invoice_total" name="invoice_total" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
                                 <label for="date" class="form-label">Date</label>
                                 <input type="date" class="form-control" id="date" name="date"
                                     value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col">
                             <div class="mb-3">
                                 <label for="payment_method" class="form-label">Payment Method</label>
@@ -65,6 +71,12 @@
                                     <option value="Cash">Cash</option>
                                     <option value="Bank Transfer">Bank Transfer</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="payment_total" class="form-label">Payment Total</label>
+                                <input type="text" class="form-control" id="payment_total" name="payment_total">
                             </div>
                         </div>
                     </div>
@@ -89,7 +101,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="btn-group">
                         <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -124,6 +135,14 @@
 
             to_select_invoice()
 
+            $('#payment_method').select2({
+                theme: "bootstrap-5",
+                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+                    'style',
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+            });
+
             $("#payment_total").on('blur', function() {
                 $(this).val(numeral(this.value).format("0,0"))
             })
@@ -149,7 +168,15 @@
                     },
                     cache: true,
                 }
-            });
+            }).on('select2:select', function() {
+                var url = "{!! route('invoicepayment.get_invoice_by_id', ['invoice_id' => '_invoice_id']) !!}"
+                url = url.replace('_invoice_id', this.value)
+                $.get(url, function(data) {
+                    $("#invoice_total").val(numeral(data.invoice.grand_total).format("0,0"))
+                });
+            }).on('select2:clear', function() {
+                $("#invoice_total").val("")
+            });;
         }
     </script>
 @endpush

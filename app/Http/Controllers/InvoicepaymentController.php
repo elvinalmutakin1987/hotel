@@ -59,9 +59,21 @@ class InvoicepaymentController extends Controller
     {
         $request->validate([
             'supplier_id' => 'required',
+            'invoice_id' => 'required',
             'date' => 'required',
-            'grand_total' => 'required'
+            'payment_total' => 'required'
         ]);
+        if ($request->payment_method == 'Bank Transfer') {
+            $request->validate([
+                'supplier_id' => 'required',
+                'invoice_id' => 'required',
+                'date' => 'required',
+                'payment_total' => 'required',
+                'bank_name' => 'required',
+                'bank_account' => 'required',
+                'transaction_number' => 'required'
+            ]);
+        }
         DB::beginTransaction();
         $invoicepayment = new Invoicepayment();
         $invoicepayment->supplier_id = $request->supplier_id;
