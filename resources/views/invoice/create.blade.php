@@ -65,7 +65,7 @@
                     <div class="row">
                         <div class="col">
                             <table id="table1" class="table mt-3">
-                                <thead class="table-group-divider">
+                                <thead class="table-group-divider" id="thead">
                                     <tr>
                                         <th>Items</th>
                                         <th class="text-center" style="width: 10%">Unit</th>
@@ -103,7 +103,7 @@
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tbody">
 
                                 </tbody>
                             </table>
@@ -177,102 +177,17 @@
                 placeholder: $(this).data('placeholder'),
                 allowClear: true,
             }).on('change', function() {
-                $('#goodreceipt_id').val("").trigger('change');
-                $('#goodreceipt_id').select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
-                        'w-100') ? '100%' : 'style',
-                    placeholder: $(this).data('placeholder'),
-                    allowClear: true,
-                    ajax: {
-                        url: '{{ route('invoice.get_goodreceipt') }}',
-                        dataType: 'json',
-                        data: function(params) {
-                            return {
-                                term: params.term || '',
-                                page: params.page || 1,
-                                supplier_id: $("#supplier_id").val() || null
-                            };
-                        },
-                        cache: true,
-                    }
-                });
+                to_select_goodreceipt()
             });
 
-            $('#goodreceipt_id').select2({
-                theme: "bootstrap-5",
-                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
-                    'w-100') ? '100%' : 'style',
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('invoice.get_goodreceipt') }}',
-                    dataType: 'json',
-                    data: function(params) {
-                        return {
-                            term: params.term || '',
-                            page: params.page || 1,
-                            supplier_id: $("#supplier_id").val() || null
-                        };
-                    },
-                    cache: true,
-                }
-            });
+            to_price()
 
-            $('#add_item_id').select2({
-                theme: "bootstrap-5",
-                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
-                    'style',
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('invoice.get_item') }}',
-                    dataType: 'json',
-                    data: function(params) {
-                        return {
-                            term: params.term || '',
-                            page: params.page || 1
-                        };
-                    },
-                    cache: true,
-                }
-            }).on('change', function() {
-                var url = "{!! route('invoice.get_item_by_id', ['item_id' => '_item_id', 'supplier_id' => '_supplier_id']) !!}";
-                url = url.replace('_item_id', this.value);
-                url = url.replace('_supplier_id', $("#supplier_id").val());
-                $.get(url, function(data) {
-                    if (data.itemprice) {
-                        $("#add_price").val(numeral(data.itemprice.price).format("0,0"));
-                    } else {
-                        $("#add_price").val(numeral(0).format("0,0"));
-                    }
-                    $("#add_unit").val(data.item.unit);
-                    $("#add_qty").val(1);
-                    count_sub_total();
-                });
-            });
+            to_qty()
+
+            to_select_goodreceipt()
+
+            to_select_add()
         });
-
-        $("#add_price").on('blur', function() {
-            $(this).val(numeral(this.value).format("0,0"))
-
-            count_sub_total()
-        })
-
-        $("#add_qty").on('blur', function() {
-            if (parseFloat(numeral(this.value).format("0,0")) < 1) {
-                Swal.fire({
-                    title: "Warning!",
-                    text: "Value must not be less than 1",
-                    icon: "warning"
-                });
-                $(this).val(numeral(1).format("0,0"))
-                return false;
-            }
-            $(this).val(numeral(this.value).format("0,0.0"))
-
-            count_sub_total()
-        })
 
         function count_sub_total() {
             var price = numeral($("#add_price").val()).format("0")
@@ -360,6 +275,167 @@
             $('#discount').val(numeral(discount).format("0,0"));
             $('#after_discount').val(numeral(after_discount).format("0,0"));
             $('#grand_total').val(numeral(grand_total).format("0,0"));
+        }
+
+        function to_select_add() {
+            $('#add_item_id').select2({
+                theme: "bootstrap-5",
+                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
+                    'w-100') ? '100%' : 'style',
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('invoice.get_item') }}',
+                    dataType: 'json',
+                    data: function(params) {
+                        return {
+                            term: params.term || '',
+                            page: params.page || 1
+                        };
+                    },
+                    cache: true,
+                }
+            }).on('change', function() {
+                var url = "{!! route('invoice.get_item_by_id', ['item_id' => '_item_id', 'supplier_id' => '_supplier_id']) !!}";
+                url = url.replace('_item_id', this.value);
+                url = url.replace('_supplier_id', $("#supplier_id").val());
+                $.get(url, function(data) {
+                    if (data.itemprice) {
+                        $("#add_price").val(numeral(data.itemprice.price).format(
+                            "0,0"));
+                    } else {
+                        $("#add_price").val(numeral(0).format("0,0"));
+                    }
+                    $("#add_unit").val(data.item.unit);
+                    $("#add_qty").val(1);
+                    count_sub_total();
+                });
+            });
+        }
+
+        function to_select_goodreceipt() {
+            $('#goodreceipt_id').val("").trigger('change');
+            $('#goodreceipt_id').select2({
+                theme: "bootstrap-5",
+                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
+                    'w-100') ? '100%' : 'style',
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('invoice.get_goodreceipt') }}',
+                    dataType: 'json',
+                    data: function(params) {
+                        return {
+                            term: params.term || '',
+                            page: params.page || 1,
+                            supplier_id: $("#supplier_id").val() || null
+                        };
+                    },
+                    cache: true,
+                }
+            }).on('select2:select', function() {
+                var url = "{!! route('invoice.get_goodreceipt_by_id', ['goodreceipt_id' => '_goodreceipt_id']) !!}"
+                url = url.replace('_goodreceipt_id', this.value)
+                $("#thead").html(`
+                    <tr>
+                        <th>Items</th>
+                        <th class="text-center" style="width: 10%">Unit</th>
+                        <th class="text-end" style="width: 15%">Price</th>
+                        <th class="text-end" style="width: 10%">Qty</th>
+                        <th class="text-end" style="width: 15%">Amount</th>
+                        <th style="width: 50px" class="text-center"></th>
+                    </tr>`);
+                $("#tbody").html(`
+                    <tr>
+                        <td colspan="6">
+                             <div class="text-center" id="spinner">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only"></span>
+                                </div>
+                            </div>
+                        </td>
+                    </td>`);
+                $.get(url, function(data) {
+                    $("#tbody").html(data.view)
+                    $("#total").val(numeral(data.goodreceipt.total).format("0,0"))
+                    $("#discount").val(numeral(data.goodreceipt.discount).format("0,0"))
+                    $("#after_discount").val(numeral(data.goodreceipt.after_discount).format("0,0"))
+                    $("#tax").val(numeral(data.goodreceipt.tax).format("0,0"))
+                    $("#grand_total").val(numeral(data.goodreceipt.grand_total).format("0,0"))
+                });
+            }).on('select2:clear', function() {
+                $("#thead").html(`
+                    <tr>
+                        <th>Items</th>
+                        <th class="text-center" style="width: 10%">Unit</th>
+                        <th class="text-end" style="width: 15%">Price</th>
+                        <th class="text-end" style="width: 10%">Qty</th>
+                        <th class="text-end" style="width: 15%">Amount</th>
+                        <th style="width: 50px" class="text-center"></th>
+                    </tr>
+                    <tr>
+                        <th>
+                            <select class="form-select" id="add_item_id" name="add_item_id"
+                                data-placeholder="Choose item">
+
+                            </select>
+                        </th>
+                        <th class="text-center">
+                            <input type="text" class="form-control" id="add_unit" name="add_unit"
+                                readonly>
+                        </th>
+                        <th class="text-end">
+                            <input type="text" class="form-control text-end" id="add_price"
+                                name="add_price">
+                        </th>
+                        <th class="text-end">
+                            <input type="text" class="form-control text-end" id="add_qty"
+                                name="add_qty">
+                        </th>
+                        <th class="text-end">
+                            <input type="text" class="form-control text-end" id="add_sub_total"
+                                name="add_sub_total" readonly>
+                        </th>
+                        <th class="text-center">
+                            <button type="button" class="btn btn-outline-primary"
+                                onclick="add()">Add</button>
+                        </th>
+                    </tr>`);
+                $("#tbody").html("")
+                to_select_add()
+                to_price()
+                to_qty()
+                $("#total").val("0")
+                $("#discount").val("0")
+                $("#after_discount").val("0")
+                $("#tax").val("0")
+                $("#grand_total").val("0")
+            });
+        }
+
+        function to_qty() {
+            $("#add_qty").on('blur', function() {
+                if (parseFloat(numeral(this.value).format("0,0")) < 1) {
+                    Swal.fire({
+                        title: "Warning!",
+                        text: "Value must not be less than 1",
+                        icon: "warning"
+                    });
+                    $(this).val(numeral(1).format("0,0"))
+                    return false;
+                }
+                $(this).val(numeral(this.value).format("0,0.0"))
+
+                count_sub_total()
+            })
+        }
+
+        function to_price() {
+            $("#add_price").on('blur', function() {
+                $(this).val(numeral(this.value).format("0,0"))
+
+                count_sub_total()
+            })
         }
     </script>
 @endpush

@@ -149,6 +149,7 @@ class InvoiceController extends Controller
                     'sub_total' => $request->sub_total ? Controller::number_unformat($request->sub_total[$key]) : null
                 ];
             }
+            $invoice->invoicedetail()->delete();
             $invoice->invoicedetail()->createMany($detail);
         }
         DB::commit();
@@ -198,6 +199,18 @@ class InvoiceController extends Controller
         }
     }
 
+    public function get_goodreceipt_by_id(Request $request)
+    {
+        if ($request->ajax()) {
+            $goodreceipt = Goodreceipt::find($request->goodreceipt_id);
+            $view = view('invoice.detail', compact('goodreceipt'))->render();
+            return response()->json([
+                'view' => $view,
+                'goodreceipt' => $goodreceipt
+            ]);
+        }
+    }
+
     public function get_item(Request $request)
     {
         if ($request->ajax()) {
@@ -234,7 +247,7 @@ class InvoiceController extends Controller
         }
     }
 
-    public function print(Request $request, Goodreceipt $goodreceipt)
+    public function print(Request $request, Invoice $invoice)
     {
         $systemsetting = collect(config('systemsetting'));
         $pdf = PDF::loadview('invoice.print', compact(

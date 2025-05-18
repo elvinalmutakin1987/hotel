@@ -10,14 +10,14 @@
                         href="{{ route('dashboard') }}">
                         Dashboard
                     </a></li>
-                <li class="breadcrumb-item active" aria-current="page">Invoice</li>
+                <li class="breadcrumb-item active" aria-current="page">Payment</li>
             </ol>
         </nav>
 
         <div class="card">
             <div class="card-body">
 
-                <a type="button" class="btn btn-outline-primary mb-3" href="{{ route('invoice.create') }}"> Add New
+                <a type="button" class="btn btn-outline-primary mb-3" href="{{ route('invoicepayment.create') }}"> Add New
                 </a>
 
                 <div class="d-flex flex-row gap-2 mb-3">
@@ -50,28 +50,32 @@
                     <thead class="table-group-divider">
                         <tr>
                             <th>Number</th>
-                            <th>Good Receipt Number</th>
+                            <th>Invoice Number</th>
                             <th>Date</th>
-                            <th>Supplier</th>
-                            <th>Grand Total</th>
+                            <th>Bank Name</th>
+                            <th>Bank Account</th>
+                            <th>Transaction Number</th>
+                            <th>Payment Total</th>
                             <th>Status</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody class="table-group-divider">
-                        @if ($invoice->count() == 0)
+                        @if ($invoicepayment->count() == 0)
                             <tr>
-                                <td colspan="7" class="text-center">No data</td>
+                                <td colspan="9" class="text-center">No data</td>
                             </tr>
                         @else
-                            @foreach ($invoice as $d)
+                            @foreach ($invoicepayment as $d)
                                 <tr>
                                     <td><a class="link-primary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover me-2"
-                                            href="{{ route('invoice.show', $d->id) }}">{{ $d->number }}</a></td>
-                                    <td>{{ $d->goodreceipt->number }}</td>
+                                            href="{{ route('invoicepayment.show', $d->id) }}">{{ $d->number }}</a></td>
+                                    <td>{{ $d->invoice->number }}</td>
                                     <td>{{ $d->date }}</td>
-                                    <td>{{ $d->supplier->name }}</td>
-                                    <td>{{ Illuminate\Support\Number::format((float) $d->grand_total) }}</td>
+                                    <td>{{ $d->bank_name }}</td>
+                                    <td>{{ $d->bank_account }}</td>
+                                    <td>{{ $d->transaction_number }}</td>
+                                    <td>{{ Illuminate\Support\Number::format((float) $d->payment_total) }}</td>
                                     <td>
                                         @if ($d->status == 'Draft')
                                             <span class="badge text-bg-primary"> {{ $d->status }}</span>
@@ -82,15 +86,15 @@
                                     <td class="text-center">
                                         @if ($d->status == 'Submit')
                                             <a class="link-dark link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover me-2"
-                                                href="{{ route('invoice.print', $d->id) }}">
+                                                href="{{ route('invoicepayment.print', $d->id) }}">
                                                 Print
                                             </a>
                                         @else
                                             <a class="link-primary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover me-2"
-                                                href="{{ route('invoice.edit', $d->id) }}">
+                                                href="{{ route('invoicepayment.edit', $d->id) }}">
                                                 Edit
                                             </a>
-                                            <form class="d-inline" action="{{ route('invoice.destroy', $d->id) }}"
+                                            <form class="d-inline" action="{{ route('invoicepayment.destroy', $d->id) }}"
                                                 method="POST" id="form-delete{{ $d->id }}">
                                                 @csrf
                                                 @method('DELETE')
@@ -109,7 +113,7 @@
                 </table>
 
                 <nav>
-                    {{ $invoice->links('pagination::bootstrap-5') }}
+                    {{ $invoicepayment->links('pagination::bootstrap-5') }}
                 </nav>
 
             </div>
@@ -173,7 +177,7 @@
 
         function search() {
             var url =
-                '{!! route('invoice.index', [
+                '{!! route('invoicepayment.index', [
                     'start_date' => '_start_date',
                     'end_date' => '_end_date',
                     'supplier_id' => '_supplier_id',

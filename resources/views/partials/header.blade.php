@@ -104,7 +104,7 @@
                             </ul>
                         </li>
                     @endif
-                    @if (auth()->user()->hasAnyPermission(['purchase', 'goodreceipt', 'stock', 'stockopname', 'supplier']))
+                    @if (auth()->user()->hasAnyPermission(['invoice', 'invoicepayment']))
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="dropdown04" data-bs-toggle="dropdown"
                                 aria-expanded="false">Financial & Accounting</a>
@@ -113,7 +113,11 @@
                                     <li><a class="dropdown-item" href="{{ route('invoice.index') }}">Invoice</a>
                                     </li>
                                 @endif
-
+                                @if (auth()->user()->hasPermissionTo('invoicepayment'))
+                                    <li><a class="dropdown-item" href="{{ route('invoicepayment.index') }}">
+                                            Payment</a>
+                                    </li>
+                                @endif
                             </ul>
                         </li>
                     @endif

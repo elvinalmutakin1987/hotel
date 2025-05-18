@@ -10,6 +10,7 @@ use App\Http\Controllers\GoodreceiptController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoicepaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoleController;
@@ -135,5 +136,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('invoice-get-item', [InvoiceController::class, 'get_item'])->name('invoice.get_item');
         Route::get('invoice-get-item-by-id', [InvoiceController::class, 'get_item_by_id'])->name('invoice.get_item_by_id');
         Route::get('invoice-get-goodreceipt', [InvoiceController::class, 'get_goodreceipt'])->name('invoice.get_goodreceipt');
+        Route::get('invoice-get-goodreceipt-by-id', [InvoiceController::class, 'get_goodreceipt_by_id'])->name('invoice.get_goodreceipt_by_id');
+    });
+
+    Route::group(['middleware' => ['role_or_permission:admin|invoicepayment']], function () {
+        Route::resource('invoicepayment', InvoicepaymentController::class)->names('invoicepayment');
+
+        Route::get('invoicepayment/{invoicepayment}/print', [InvoicepaymentController::class, 'print'])->name('invoicepayment.print');
+        Route::get('invoicepayment-get-item', [InvoicepaymentController::class, 'get_item'])->name('invoicepayment.get_item');
+        Route::get('invoicepayment-get-item-by-id', [InvoicepaymentController::class, 'get_item_by_id'])->name('invoicepayment.get_item_by_id');
+        Route::get('invoicepayment-get-invoice', [InvoicepaymentController::class, 'get_invoice'])->name('invoicepayment.get_invoice');
+        Route::get('invoicepayment-get-invoice-by-id', [InvoicepaymentController::class, 'get_invoice_by_id'])->name('invoicepayment.get_invoice_by_id');
     });
 });

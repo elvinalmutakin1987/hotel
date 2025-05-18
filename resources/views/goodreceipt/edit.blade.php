@@ -208,80 +208,12 @@
                 placeholder: $(this).data('placeholder'),
                 allowClear: true,
             }).on('change', function() {
-                $('#purchase_id').val("").trigger('change');
-                $('#purchase_id').select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
-                        'w-100') ? '100%' : 'style',
-                    placeholder: $(this).data('placeholder'),
-                    allowClear: true,
-                    ajax: {
-                        url: '{{ route('goodreceipt.get_purchase') }}',
-                        dataType: 'json',
-                        data: function(params) {
-                            return {
-                                term: params.term || '',
-                                page: params.page || 1,
-                                supplier_id: $("#supplier_id").val() || null
-                            };
-                        },
-                        cache: true,
-                    }
-                });
+                to_select_purchase()
             });
 
-            $('#purchase_id').select2({
-                theme: "bootstrap-5",
-                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
-                    'w-100') ? '100%' : 'style',
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('goodreceipt.get_purchase') }}',
-                    dataType: 'json',
-                    data: function(params) {
-                        return {
-                            term: params.term || '',
-                            page: params.page || 1,
-                            supplier_id: $("#supplier_id").val() || null
-                        };
-                    },
-                    cache: true,
-                }
-            });
+            to_select_purchase()
 
-            $('#add_item_id').select2({
-                theme: "bootstrap-5",
-                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
-                    'style',
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('goodreceipt.get_item') }}',
-                    dataType: 'json',
-                    data: function(params) {
-                        return {
-                            term: params.term || '',
-                            page: params.page || 1
-                        };
-                    },
-                    cache: true,
-                }
-            }).on('change', function() {
-                var url = "{!! route('goodreceipt.get_item_by_id', ['item_id' => '_item_id', 'supplier_id' => '_supplier_id']) !!}";
-                url = url.replace('_item_id', this.value);
-                url = url.replace('_supplier_id', $("#supplier_id").val());
-                $.get(url, function(data) {
-                    if (data.itemprice) {
-                        $("#add_price").val(numeral(data.itemprice.price).format("0,0"));
-                    } else {
-                        $("#add_price").val(numeral(0).format("0,0"));
-                    }
-                    $("#add_unit").val(data.item.unit);
-                    $("#add_qty").val(1);
-                    count_sub_total();
-                });
-            });
+            to_select_add()
         });
 
         $("#add_price").on('blur', function() {
@@ -391,6 +323,63 @@
             $('#discount').val(numeral(discount).format("0,0"));
             $('#after_discount').val(numeral(after_discount).format("0,0"));
             $('#grand_total').val(numeral(grand_total).format("0,0"));
+        }
+
+        function to_select_purchase() {
+            $('#purchase_id').val("").trigger('change');
+            $('#purchase_id').select2({
+                theme: "bootstrap-5",
+                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass(
+                    'w-100') ? '100%' : 'style',
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('goodreceipt.get_purchase') }}',
+                    dataType: 'json',
+                    data: function(params) {
+                        return {
+                            term: params.term || '',
+                            page: params.page || 1,
+                            supplier_id: $("#supplier_id").val() || null
+                        };
+                    },
+                    cache: true,
+                }
+            });
+        }
+
+        function to_select_add() {
+            $('#add_item_id').select2({
+                theme: "bootstrap-5",
+                width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('goodreceipt.get_item') }}',
+                    dataType: 'json',
+                    data: function(params) {
+                        return {
+                            term: params.term || '',
+                            page: params.page || 1
+                        };
+                    },
+                    cache: true,
+                }
+            }).on('change', function() {
+                var url = "{!! route('goodreceipt.get_item_by_id', ['item_id' => '_item_id', 'supplier_id' => '_supplier_id']) !!}";
+                url = url.replace('_item_id', this.value);
+                url = url.replace('_supplier_id', $("#supplier_id").val());
+                $.get(url, function(data) {
+                    if (data.itemprice) {
+                        $("#add_price").val(numeral(data.itemprice.price).format("0,0"));
+                    } else {
+                        $("#add_price").val(numeral(0).format("0,0"));
+                    }
+                    $("#add_unit").val(data.item.unit);
+                    $("#add_qty").val(1);
+                    count_sub_total();
+                });
+            });
         }
     </script>
 @endpush

@@ -8,42 +8,43 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use OwenIt\Auditing\Contracts\Auditable;
 
-class Invoice extends Model implements Auditable
+class Invoicepayment extends Model implements Auditable
 {
     use HasFactory;
+
     use \OwenIt\Auditing\Auditable;
 
     protected $auditInclude = [
+        'invoice_id',
         'supplier_id',
-        'goodreceipt_id',
         'number',
-        'supplier_bill',
         'date',
-        'total',
-        'discount',
-        'after_discount',
-        'tax',
-        'grand_total',
+        'payment_method',
+        'bank_name',
+        'transaction_number',
+        'payment_total',
         'status'
     ];
 
-    public function invoicedetail(): HasMany
+    protected $fillable = [
+        'invoice_id',
+        'supplier_id',
+        'number',
+        'date',
+        'payment_method',
+        'bank_name',
+        'transaction_number',
+        'payment_total',
+        'status'
+    ];
+
+    public function invoice(): BelongsTo
     {
-        return $this->hasMany(Invoicedetail::class);
+        return $this->belongsTo(Invoice::class)->withDefault(['number' => null]);
     }
 
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class)->withDefault(['name' => null]);
-    }
-
-    public function goodreceipt(): BelongsTo
-    {
-        return $this->belongsTo(Goodreceipt::class)->withDefault(['number' => null]);
-    }
-
-    public function invoicepayment(): HasMany
-    {
-        return $this->hasMany(Invoicepayment::class);
     }
 }
