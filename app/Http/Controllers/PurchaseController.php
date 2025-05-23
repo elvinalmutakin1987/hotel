@@ -21,13 +21,13 @@ class PurchaseController extends Controller
         $start_date = $request->start_date ?? Carbon::now()->startOfMonth();
         $end_date = $request->end_date ?? Carbon::now()->endOfMonth();
         $purchase = Purchase::where('number', 'like', '%' . $request->search . '%');
-        if ($request->start_date && ($request->start_date != 'null' || $request->start_date != 'All')) {
+        if ($request->start_date && $request->start_date != 'null' && $request->start_date != 'All') {
             $purchase = $purchase->where('date', '>=', $start_date);
         }
-        if ($request->end_date && ($request->end_date != 'null' || $request->end_date != 'All')) {
+        if ($request->end_date && $request->end_date != 'null' && $request->end_date != 'All') {
             $purchase = $purchase->where('date', '<=', $end_date);
         }
-        if ($request->supplier_id && ($request->supplier_id != 'null' || $request->supplier_id != 'All')) {
+        if ($request->supplier_id && $request->supplier_id != 'null' && $request->supplier_id != 'All') {
             $purchase = $purchase->where('supplier_id', $request->supplier_id);
         }
         $purchase = $purchase->paginate(10, ['*'], 'page', $request->page ?? 1)

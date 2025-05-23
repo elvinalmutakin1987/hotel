@@ -23,13 +23,13 @@ class InvoiceController extends Controller
         $start_date = $request->start_date ?? Carbon::now()->startOfMonth();
         $end_date = $request->end_date ?? Carbon::now()->endOfMonth();
         $invoice = Invoice::where('number', 'like', '%' . $request->search . '%')->orWhere('supplier_bill', 'like', '%' . $request->search . '%');
-        if ($request->start_date && ($request->start_date != 'null' || $request->start_date != 'All')) {
+        if ($request->start_date && $request->start_date != 'null' && $request->start_date != 'All') {
             $invoice = $invoice->where('date', '>=', $start_date);
         }
-        if ($request->end_date && ($request->end_date != 'null' || $request->end_date != 'All')) {
+        if ($request->end_date && $request->end_date != 'null' && $request->end_date != 'All') {
             $invoice = $invoice->where('date', '<=', $end_date);
         }
-        if ($request->supplier_id && ($request->supplier_id != 'null' || $request->supplier_id != 'All')) {
+        if ($request->supplier_id && $request->supplier_id != 'null' && $request->supplier_id != 'All') {
             $invoice = $invoice->where('supplier_id', $request->supplier_id);
         }
         $invoice = $invoice->paginate(10, ['*'], 'page', $request->page ?? 1)

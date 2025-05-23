@@ -12,8 +12,8 @@
                     </a></li>
                 <li class="breadcrumb-item"> <a
                         class="link-primary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover me-2"
-                        href="{{ route('invoice.index') }}">
-                        Invoice
+                        href="{{ route('invoicepayment.index') }}">
+                        Payment
                     </a></li>
                 <li class="breadcrumb-item active" aria-current="page">Add</li>
             </ol>
@@ -21,7 +21,7 @@
 
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('invoice.store') }}" method="post">
+                <form action="{{ route('invoicepayment.store') }}" method="post">
                     @csrf
                     @method('POST')
                     <div class="row">
@@ -52,6 +52,26 @@
                             <div class="mb-3">
                                 <label for="invoice_total" class="form-label">Invoice Total</label>
                                 <input type="text" class="form-control" id="invoice_total" name="invoice_total" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <table id="table1" class="table table-striped mt-3">
+                                    <thead class="table-group-divider">
+                                        <tr>
+                                            <th>Payment Number</th>
+                                            <th>Date</th>
+                                            <th class="text-end">Payment Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="3" class="text-center">No data display</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -111,7 +131,8 @@
                             <li><button class="dropdown-item" name="status" value="Submit">Submit</button></li>
                         </ul>
                     </div>
-                    <a type="button" class="btn btn-outline-secondary" href="{{ route('invoice.index') }}">Back</a>
+                    <a type="button" class="btn btn-outline-secondary"
+                        href="{{ route('invoicepayment.index') }}">Back</a>
                 </form>
             </div>
         </div>
@@ -173,6 +194,8 @@
                 url = url.replace('_invoice_id', this.value)
                 $.get(url, function(data) {
                     $("#invoice_total").val(numeral(data.invoice.grand_total).format("0,0"))
+                    $("#table1 tbody").empty()
+                    $("#table1 tbody").html(data.view)
                 });
             }).on('select2:clear', function() {
                 $("#invoice_total").val("")

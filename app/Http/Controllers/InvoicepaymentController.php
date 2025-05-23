@@ -25,13 +25,13 @@ class InvoicepaymentController extends Controller
         $start_date = $request->start_date ?? Carbon::now()->startOfMonth();
         $end_date = $request->end_date ?? Carbon::now()->endOfMonth();
         $invoicepayment = Invoicepayment::where('number', 'like', '%' . $request->search . '%');
-        if ($request->start_date && ($request->start_date != 'null' || $request->start_date != 'All')) {
+        if ($request->start_date && $request->start_date != 'null' && $request->start_date != 'All') {
             $invoicepayment = $invoicepayment->where('date', '>=', $start_date);
         }
-        if ($request->end_date && ($request->end_date != 'null' || $request->end_date != 'All')) {
+        if ($request->end_date && $request->end_date != 'null' && $request->end_date != 'All') {
             $invoicepayment = $invoicepayment->where('date', '<=', $end_date);
         }
-        if ($request->supplier_id && ($request->supplier_id != 'null' || $request->supplier_id != 'All')) {
+        if ($request->supplier_id && $request->supplier_id != 'null' && $request->supplier_id != 'All') {
             $invoicepayment = $invoicepayment->where('supplier_id', $request->supplier_id);
         }
         $invoicepayment = $invoicepayment->paginate(10, ['*'], 'page', $request->page ?? 1)
@@ -98,7 +98,11 @@ class InvoicepaymentController extends Controller
      */
     public function show(Invoicepayment $invoicepayment)
     {
-        //
+        $supplier = Supplier::all();
+        $invoice = Invoice::where('status', 'Submit')->get();
+        $systemsetting = collect(config('systemsetting'));
+        $payment_total = Invoicepayment::where('invoice_id', $invoicepayment->invoice_id)->where('status', '<>', 'Draft')->sum('payment_total');
+        return view('invoicepayment.show', compact('invoicepayment', 'systemsetting', 'supplier', 'invoice', 'payment_total'));
     }
 
     /**
@@ -106,7 +110,10 @@ class InvoicepaymentController extends Controller
      */
     public function edit(Invoicepayment $invoicepayment)
     {
-        //
+        $supplier = Supplier::all();
+        $invoice = Invoice::where('status', 'Submit')->get();
+        $systemsetting = collect(config('systemsetting'));
+        return view('invoicepayment.edit', compact('invoicepayment', 'systemsetting', 'supplier', 'invoice'));
     }
 
     /**
@@ -114,7 +121,36 @@ class InvoicepaymentController extends Controller
      */
     public function update(Request $request, Invoicepayment $invoicepayment)
     {
-        //
+        $request->validate([
+            'supplier_id' => 'required',
+            'invoice_id' => 'required',
+            'date' => 'required',
+            'payment_total' => 'required'
+        ]);
+        if ($request->payment_method == 'Bank Transfer') {
+            $request->validate([
+                'supplier_id' => 'required',
+                'invoice_id' => 'required',
+                'date' => 'required',
+                'payment_total' => 'required',
+                'bank_name' => 'required',
+                'bank_account' => 'required',
+                'transaction_number' => 'required'
+            ]);
+        }
+        DB::beginTransaction();
+        $invoicepayment->date = $request->date;
+        $invoicepayment->payment_method = $request->payment_method;
+        $invoicepayment->bank_name = $request->bank_name;
+        $invoicepayment->bank_account = $request->bank_account;
+        $invoicepayment->transaction_number = $request->transaction_number;
+        $invoicepayment->payment_total = $request->payment_total ? Controller::number_unformat($request->payment_total) : null;
+        $invoicepayment->status  = $request->status;
+        $invoicepayment->save();
+        DB::commit();
+        return redirect()->route('invoicepayment.index')->with([
+            'message' => 'Data saved!'
+        ]);
     }
 
     /**
@@ -161,10 +197,12 @@ class InvoicepaymentController extends Controller
     {
         if ($request->ajax()) {
             $invoice = Invoice::find($request->invoice_id);
-            $view = view('invoicepayment.detail', compact('invoice'))->render();
+            $invoicepayment = Invoicepayment::where('invoice_id', $request->invoice_id)->where('status', '<>', 'Draft')->get();
+            $view = view('invoicepayment.detail', compact('invoicepayment', 'invoice'))->render();
             return response()->json([
                 'view' => $view,
-                'invoice' => $invoice
+                'invoice' => $invoice,
+                'invoicepayment' => $invoicepayment
             ]);
         }
     }

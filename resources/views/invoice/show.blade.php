@@ -51,7 +51,7 @@
                             value="{{ \Carbon\Carbon::parse($invoice->date)->format('d/m/Y') }}">
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mb-3">
                     <div class="col">
                         <table id="table1" class="table mt-3">
                             <thead class="table-group-divider">

@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('e_wallet_provider')->nullable();
             $table->enum('room_check_in', ['Off', 'On'])->default('Off');
             $table->enum('room_check_out', ['Off', 'On'])->default('Off');
-            $table->enum('status', ['Pending', 'Confirmed', 'Cancelled'])->default('Pending');
+            $table->enum('status', ['Pending', 'Confirmed', 'Canceled'])->default('Pending');
             $table->timestamps();
         });
     }
