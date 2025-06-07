@@ -165,6 +165,23 @@
             });
 
             $("#payment_total").on('blur', function() {
+                let remain_payment = "0";
+                let remain_element = document.getElementById('remain_payment');
+                if (remain_element) {
+                    remain_payment = remain_element.innerText.replace(/,/g, '');
+                }
+                remain_payment = numeral(remain_payment).format("0");
+                remain_payment = parseFloat(remain_payment);
+                if (parseFloat(this.value) > remain_payment) {
+                    Swal.fire({
+                        title: "Warning!",
+                        text: "Payment total cannot be greater than remain payment",
+                        icon: "warning"
+                    });
+                    $("#payment_total").val(numeral(remain_payment).format("0,0"));
+                    $("#payment_total").focus();
+                    return false;
+                }
                 $(this).val(numeral(this.value).format("0,0"))
             })
         });

@@ -17,7 +17,7 @@
 </tr>
 <tr>
     <td colspan="2" class="text-end"><b>Remain Payment :</b></td>
-    <td class="text-end">
+    <td class="text-end" id="remain_payment">
         <b>{{ Illuminate\Support\Number::format((float) $invoice->grand_total - (float) $payment_total) }}</b>
     </td>
 </tr>
